@@ -50,10 +50,11 @@ try {
     await page.waitForSelector("main h1", { timeout: 15000 })
     if (errors.length) throw new Error(`${route}: ${errors.join("; ")}`)
     jsonLd[route] = await page.$$eval('script[type="application/ld+json"]', (els) => els.map((e) => JSON.parse(e.textContent)))
-    const html = "<!doctype html>\n" + (await page.evaluate(() => {
+    // Vite's runtime preloader inserts absolute URLs on the preview origin; make them root-relative.
+    const html = ("<!doctype html>\n" + (await page.evaluate(() => {
       localStorage.removeItem("moondune.offerSeen")
       return document.documentElement.outerHTML
-    }))
+    }))).replaceAll("http://localhost:4179", "")
     const out = route === "/" ? path.join(dist, "index.html") : path.join(dist, route, "index.html")
     fs.mkdirSync(path.dirname(out), { recursive: true })
     fs.writeFileSync(out, html)

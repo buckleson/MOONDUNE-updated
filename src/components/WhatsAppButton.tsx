@@ -1,5 +1,6 @@
 import { useLocation } from "react-router-dom"
 import { contact } from "@/data/content"
+import { SITE_URL } from "@/lib/schema"
 import { cn } from "@/lib/utils"
 
 const WA_NUMBER = contact.phone.replace(/\D/g, "")
@@ -9,7 +10,7 @@ export function WhatsAppButton() {
   const { pathname } = useLocation()
   const onProduct = pathname.startsWith("/products/")
   const text = encodeURIComponent(
-    onProduct ? `Hi Moondune! I have a question about ${window.location.href}` : "Hi Moondune! I have a question.",
+    onProduct ? `Hi Moondune! I have a question about ${SITE_URL}${pathname}` : "Hi Moondune! I have a question.",
   )
   return (
     <a
