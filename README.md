@@ -32,7 +32,17 @@ Prerendering needs a local Chrome (auto-detected, or set `CHROME_PATH`).
 **Speed**
 - Assets 72.7 MB → ~6 MB (WebP, MP4, 600px thumbnails with `srcset`, lazy images & videos), route-level code splitting, non-blocking fonts. Lighthouse mobile: page weight 26 MB → 0.8 MB, LCP 58 s → ~5 s, SEO 92 → 100.
 
+## Conversion polish (Oct 2026)
+- **Unified CTAs**: `Button` gained `gold` / `wine` variants and a `cta` size (48px, press state); hand-rolled buttons now use them.
+- **Home**: hero secondary CTA goes to the routine finder ("Find my match"); the AM to PM Combo is a featured bento card; a new **proof bento** (`home/ProofBento.tsx`) replaces the moving lab-report marquee with tappable tiles and chips; a closing combo CTA; a mobile sticky add-to-cart once the hero scrolls away (WhatsApp steps above it).
+- **Feedback**: "Added" state on add-to-cart buttons, cart-icon bump, routine match scrolls into view on phones.
+- **Product page**: live "usually delivered by {date}" line (client-only, never in the prerendered HTML).
+- **Cart**: "You save" line, payment/delivery reassurance under Checkout, tumbler cross-sell when the combo nudge doesn't apply.
+- **Motion**: CSS-only scroll reveals (`components/Reveal.tsx`) that hide nothing until JS runs and respect reduced motion; shared `--ease-out` token.
+- **Analytics hooks**: `lib/track.ts` pushes `add_to_cart`, `begin_checkout`, `routine_match`, `combo_upgrade`, `email_offer_submit`, `whatsapp_click` to `window.dataLayer` once a tag manager is added (no script shipped).
+
 ## Before launch
 - Replace placeholder reviews in `src/data/reviews.ts` and set `REVIEWS_ARE_SAMPLES = false`; then add `aggregateRating` to `productSchema`.
 - Wire `EmailOffer` / `NewsletterSignup` to the store's email platform; wire checkout to Shopify/Stripe.
 - Add essence bottle sizes (ml) to `facts` in `src/data/products.ts`.
+- Install GA4 / GTM to receive the `track()` events.

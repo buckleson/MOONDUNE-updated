@@ -3,6 +3,7 @@ import { toast } from "sonner"
 import { discountCodes } from "@/data/content"
 import { getProduct, type Product, type Variant } from "@/data/products"
 import { useLocalStorage } from "@/hooks/useLocalStorage"
+import { track } from "@/lib/track"
 
 export interface CartLine {
   handle: string
@@ -72,6 +73,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         }
         return [...prev, { handle, variantId, quantity: Math.min(MAX_QTY, quantity) }]
       })
+      track("add_to_cart", { item_id: variantId, handle, quantity })
       if (!opts?.silent) {
         toast.success("Added to cart", { description: getProduct(handle)?.shortTitle })
         setOpen(true)

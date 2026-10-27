@@ -53,6 +53,9 @@ try {
     // Vite's runtime preloader inserts absolute URLs on the preview origin; make them root-relative.
     const html = ("<!doctype html>\n" + (await page.evaluate(() => {
       localStorage.removeItem("moondune.offerSeen")
+      // Snapshot without the JS flag so scroll-reveal sections are visible before (or without) JS.
+      document.documentElement.classList.remove("js")
+      if (!document.documentElement.className) document.documentElement.removeAttribute("class")
       return document.documentElement.outerHTML
     }))).replaceAll("http://localhost:4179", "")
     const out = route === "/" ? path.join(dist, "index.html") : path.join(dist, route, "index.html")

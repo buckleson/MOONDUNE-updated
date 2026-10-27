@@ -5,6 +5,7 @@ import { toast } from "sonner"
 import { EMAIL_RE } from "@/components/NewsletterSignup"
 import { useCart } from "@/context/CartContext"
 import { useLocalStorage } from "@/hooks/useLocalStorage"
+import { track } from "@/lib/track"
 import { cn } from "@/lib/utils"
 
 const DELAY_MS = 20000
@@ -97,6 +98,7 @@ export function EmailOffer() {
                 }
                 setSubscribers((s) => (s.includes(v) ? s : [...s, v]))
                 applyDiscount("SAVE15")
+                track("email_offer_submit", { page: pathname })
                 setSeen(true)
                 setDone(true)
                 toast.success("SAVE15 applied to your cart")

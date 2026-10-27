@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useState } from "react"
-import { Link } from "react-router-dom"
-import { ArrowRight, Award, FlaskConical, Pause, Play, Truck, Wallet } from "lucide-react"
+import { forwardRef, useCallback, useEffect, useState } from "react"
+import { ArrowDown, Award, Check, FlaskConical, Pause, Play, Truck, Wallet } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import { useCart } from "@/context/CartContext"
 import { heroSlides } from "@/data/content"
 import { formatAED, getProduct } from "@/data/products"
+import { useAddedFeedback } from "@/hooks/useAddedFeedback"
 import { cn } from "@/lib/utils"
 
 const HERO_PRODUCT = "dates-honey-pm-essence"
@@ -15,11 +16,13 @@ export const proofPoints = [
   { icon: Wallet, text: "Cash on delivery available" },
 ]
 
-export function HeroCarousel() {
+/** `ref` lands on the hero CTA row so a sticky bar can take over once it scrolls away. */
+export const HeroCarousel = forwardRef<HTMLDivElement>(function HeroCarousel(_, ctaRef) {
   const [i, setI] = useState(0)
   const [paused, setPaused] = useState(false)
   const [hover, setHover] = useState(false)
   const { addItem } = useCart()
+  const [added, flashAdded] = useAddedFeedback()
   const product = getProduct(HERO_PRODUCT)!
   const variant = product.variants[0]
   const n = heroSlides.length
@@ -66,22 +69,37 @@ export function HeroCarousel() {
               Barrier-first essences that hold up in 45°C heat and all-day AC. Arabic botanicals, Korean bio-science, one step
               morning and night.
             </p>
-            <div className="mt-8 flex items-center gap-2 sm:gap-3">
-              <button
-                onClick={() => addItem(product.handle, variant.id)}
-                className="group inline-flex h-13 flex-1 items-center justify-center gap-2.5 rounded-full bg-gold px-4 text-sm font-semibold whitespace-nowrap text-wine sm:flex-none sm:px-7 shadow-[0_10px_30px_-10px_rgba(227,185,83,.7)] transition hover:bg-gold-2"
+            <div ref={ctaRef} className="mt-8 flex items-center gap-2 sm:gap-3">
+              <Button
+                variant="gold"
+                size="cta"
+                onClick={() => {
+                  addItem(product.handle, variant.id)
+                  flashAdded()
+                }}
+                className="h-13 flex-1 gap-2 px-3.5 sm:flex-none sm:gap-2.5 sm:px-7"
               >
-                <span className="sm:hidden">Add bestseller</span>
-                <span className="hidden sm:inline">Add bestseller PM Essence</span>
-                <span className="h-4 w-px bg-wine/30" />
-                <span className="tabular-nums">{formatAED(variant.price)}</span>
-              </button>
-              <Link
-                to="/shop"
-                className="inline-flex h-13 shrink-0 items-center justify-center gap-2 rounded-full px-4 text-sm whitespace-nowrap sm:px-6 font-semibold text-white ring-1 ring-white/50 transition hover:bg-white hover:text-wine"
+                {added ? (
+                  <>
+                    <Check className="size-4" /> Added to cart
+                  </>
+                ) : (
+                  <>
+                    <span className="sm:hidden">Add bestseller</span>
+                    <span className="hidden sm:inline">Add bestseller PM Essence</span>
+                    <span className="h-4 w-px bg-wine/30" />
+                    <span className="tabular-nums">{formatAED(variant.price)}</span>
+                  </>
+                )}
+              </Button>
+              <a
+                href="#routine-finder"
+                className="inline-flex h-13 shrink-0 items-center justify-center gap-2 rounded-full px-3.5 text-sm font-semibold whitespace-nowrap text-white ring-1 ring-white/50 transition duration-200 ease-(--ease-out) hover:bg-white hover:text-wine active:scale-[.98] sm:px-6"
               >
-                Shop all <ArrowRight className="size-4" />
-              </Link>
+                <span className="sm:hidden">Skin quiz</span>
+                <span className="hidden sm:inline">Find my match</span>
+                <ArrowDown className="size-4 max-sm:hidden" />
+              </a>
             </div>
             {variant.compareAt && (
               <p className="mt-3 text-xs text-white/75">
@@ -90,15 +108,22 @@ export function HeroCarousel() {
             )}
           </div>
 
-          <div className="mt-10 flex items-center gap-2">
+          <div className="mt-10 flex items-center gap-1">
             {heroSlides.map((s, k) => (
               <button
                 key={s.title}
                 aria-label={`Go to slide ${k + 1}`}
                 aria-current={k === i}
                 onClick={() => go(k)}
-                className={cn("h-1.5 rounded-full bg-white/45 transition-all", k === i ? "w-8 bg-white" : "w-3 hover:bg-white/80")}
-              />
+                className="group/dot grid h-6 min-w-6 place-items-center"
+              >
+                <span
+                  className={cn(
+                    "h-1.5 rounded-full bg-white/45 transition-all",
+                    k === i ? "w-8 bg-white" : "w-3 group-hover/dot:bg-white/80",
+                  )}
+                />
+              </button>
             ))}
             <button
               aria-label={paused ? "Play slideshow" : "Pause slideshow"}
@@ -126,4 +151,4 @@ export function HeroCarousel() {
       </div>
     </>
   )
-}
+})

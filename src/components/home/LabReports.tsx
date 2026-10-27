@@ -1,9 +1,8 @@
-import { useState } from "react"
 import { Download, FileCheck2, Mail } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { contact, labReports, type LabReport } from "@/data/content"
+import { contact, type LabReport } from "@/data/content"
 
 function downloadSummary(r: LabReport) {
   const text = [
@@ -23,42 +22,6 @@ function downloadSummary(r: LabReport) {
   a.click()
   URL.revokeObjectURL(url)
   toast.success("Summary downloaded", { description: r.title })
-}
-
-export function LabReports() {
-  const [active, setActive] = useState<LabReport | null>(null)
-  const loop = [...labReports, ...labReports]
-
-  return (
-    <section className="overflow-hidden border-y bg-white py-20">
-      <div className="mx-auto max-w-3xl px-4 text-center">
-        <h2 className="text-[clamp(30px,4.4vw,46px)] leading-tight font-semibold text-wine">
-          Created for the Climate.
-          <br />
-          Tested by Science.
-        </h2>
-        <p className="mt-3 text-muted-foreground">Evaluated in an independent lab in South Korea.</p>
-      </div>
-
-      <div className="relative mt-10 [mask-image:linear-gradient(to_right,transparent,black_10%,black_90%,transparent)]">
-        <div className="animate-marquee flex w-max gap-4">
-          {loop.map((r, k) => (
-            <button
-              key={`${r.id}-${k}`}
-              onClick={() => setActive(r)}
-              tabIndex={k >= labReports.length ? -1 : 0}
-              aria-hidden={k >= labReports.length}
-              className="flex shrink-0 items-center gap-3 rounded-full border border-wine/20 bg-wine-50 px-5 py-3 text-sm font-medium text-wine transition hover:border-wine hover:bg-wine hover:text-white"
-            >
-              <FileCheck2 className="size-4" /> {r.title}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <LabReportDialog report={active} onClose={() => setActive(null)} />
-    </section>
-  )
 }
 
 export function LabReportDialog({ report, onClose }: { report: LabReport | null; onClose: () => void }) {

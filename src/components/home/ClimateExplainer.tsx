@@ -18,7 +18,7 @@ const points = [
 
 export function ClimateExplainer() {
   return (
-    <section aria-labelledby="climate-h" className="py-20">
+    <section id="why-uae" aria-labelledby="climate-h" className="scroll-mt-24 py-20">
       <div className="mx-auto grid max-w-7xl gap-12 px-4 lg:grid-cols-[1fr_1.2fr]">
         <div>
           <h2 id="climate-h" className="text-[clamp(30px,4.4vw,48px)] leading-[1.05] font-semibold text-balance text-wine">

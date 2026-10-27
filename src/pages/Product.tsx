@@ -1,4 +1,4 @@
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Link, useNavigate, useParams } from "react-router-dom"
 import { Banknote, Check, ChevronLeft, ChevronRight, CreditCard, FileCheck2, Heart, Leaf, Share2, ShieldCheck, Truck } from "lucide-react"
 import { toast } from "sonner"
@@ -11,6 +11,7 @@ import { PriceTag, ProductCard } from "@/components/ProductCard"
 import { VariantPicker } from "@/components/VariantPicker"
 import { useCart } from "@/context/CartContext"
 import { useWishlist } from "@/context/WishlistContext"
+import { useAddedFeedback } from "@/hooks/useAddedFeedback"
 import { discountPercent, formatAED, getProduct, products } from "@/data/products"
 import { cn } from "@/lib/utils"
 import NotFound from "@/pages/NotFound"
@@ -21,9 +22,30 @@ import { StickyAddToCart } from "@/components/StickyAddToCart"
 import { faqs, labReports, type LabReport } from "@/data/content"
 import { breadcrumbSchema, faqSchema, productSchema } from "@/lib/schema"
 import { thumb, productSrcSet } from "@/lib/asset"
+import { track } from "@/lib/track"
 
 const productFaqs = (category: string) =>
   category === "accessory" ? faqs[1].items : [...faqs[0].items.slice(0, 4), faqs[0].items[7], faqs[1].items[0]]
+
+/** "Thursday, 30 Oct": two days out, matching the shipping policy. Client-only so prerendered HTML never holds a stale date. */
+function DeliveryPromise() {
+  const [date, setDate] = useState("")
+  useEffect(() => {
+    if (navigator.webdriver) return // prerender (Puppeteer): keep the date out of static HTML
+    const d = new Date()
+    d.setDate(d.getDate() + 2)
+    setDate(d.toLocaleDateString("en-AE", { weekday: "long", day: "numeric", month: "short" }))
+  }, [])
+  if (!date) return null
+  return (
+    <p className="animate-in fade-in flex items-center gap-2 rounded-xl bg-success/8 px-4 py-2.5 text-sm text-ink/85 duration-500">
+      <Truck className="size-4 shrink-0 text-success" />
+      <span>
+        Order today, usually delivered by <b className="font-semibold text-success">{date}</b> with Aramex
+      </span>
+    </p>
+  )
+}
 
 export default function ProductPage() {
   const { handle = "" } = useParams()
@@ -42,6 +64,7 @@ function ProductDetail({ handle }: { handle: string }) {
   const [img, setImg] = useState(0)
   const [zoom, setZoom] = useState(false)
   const [report, setReport] = useState<LabReport | null>(null)
+  const [added, flashAdded] = useAddedFeedback()
   const ctaRef = useRef<HTMLDivElement>(null)
   const upsell = product.category === "essence" ? getProduct("am-to-pm-combo") : undefined
   const pFaqs = productFaqs(product.category)
@@ -167,11 +190,22 @@ function ProductDetail({ handle }: { handle: string }) {
           <div ref={ctaRef} className="flex flex-wrap items-center gap-3">
             <QuantityStepper value={qty} onChange={setQty} size="md" />
             <Button
-              size="lg"
-              className="h-11 flex-1 rounded-full text-xs tracking-widest uppercase"
-              onClick={() => addItem(product.handle, variant.id, qty)}
+              variant="wine"
+              size="cta"
+              aria-live="polite"
+              className="h-11 flex-1"
+              onClick={() => {
+                addItem(product.handle, variant.id, qty)
+                flashAdded()
+              }}
             >
-              Add to cart
+              {added ? (
+                <>
+                  <Check /> Added
+                </>
+              ) : (
+                <>Add to cart · {formatAED(variant.price * qty)}</>
+              )}
             </Button>
             <Button
               variant="outline"
@@ -188,16 +222,18 @@ function ProductDetail({ handle }: { handle: string }) {
             </Button>
           </div>
           <Button
-            size="lg"
-            variant="secondary"
-            className="h-11 rounded-full bg-gold text-xs tracking-widest text-wine uppercase hover:bg-gold-2"
+            variant="gold"
+            size="cta"
+            className="h-11 text-xs tracking-widest uppercase"
             onClick={() => {
               addItem(product.handle, variant.id, qty, { silent: true })
+              track("begin_checkout", { source: "buy_now", handle: product.handle })
               navigate("/checkout")
             }}
           >
             Buy it now
           </Button>
+          <DeliveryPromise />
 
           <ul className="grid grid-cols-2 gap-x-4 gap-y-2.5 text-[13px] text-ink/80">
             <li className="flex items-center gap-2">
@@ -229,7 +265,7 @@ function ProductDetail({ handle }: { handle: string }) {
                   )}
                 </p>
               </div>
-              <Button size="sm" className="shrink-0 rounded-full" onClick={() => addItem(upsell.handle, upsell.variants[0].id)}>
+              <Button size="sm" className="h-9 shrink-0 rounded-full px-4" onClick={() => addItem(upsell.handle, upsell.variants[0].id)}>
                 Add combo
               </Button>
             </div>

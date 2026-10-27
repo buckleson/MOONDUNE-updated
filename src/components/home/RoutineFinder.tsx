@@ -1,10 +1,12 @@
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { Link } from "react-router-dom"
 import { ArrowRight, Check, RotateCcw } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import { useCart } from "@/context/CartContext"
 import { formatAED, getProduct } from "@/data/products"
 import { cn } from "@/lib/utils"
 import { thumb } from "@/lib/asset"
+import { track } from "@/lib/track"
 
 // Mapping follows the brand's own guidance in the FAQ ("Which product should I start with?").
 const options = [
@@ -37,7 +39,18 @@ const options = [
 export function RoutineFinder() {
   const [pick, setPick] = useState<(typeof options)[number] | null>(null)
   const { addItem } = useCart()
+  const result = useRef<HTMLDivElement>(null)
   const product = pick ? getProduct(pick.handle) : undefined
+
+  const choose = (o: (typeof options)[number]) => {
+    setPick(o)
+    track("routine_match", { skin: o.id, handle: o.handle })
+    // On phones the match renders below the options; bring it into view.
+    requestAnimationFrame(() => {
+      const el = result.current
+      if (el && el.getBoundingClientRect().top > window.innerHeight * 0.6) el.scrollIntoView({ behavior: "smooth", block: "start" })
+    })
+  }
   const variant = product?.variants[0]
 
   return (
@@ -61,7 +74,7 @@ export function RoutineFinder() {
                     on ? "bg-white text-wine ring-white" : "ring-white/25 hover:bg-white/10 hover:ring-white/50",
                   )}
                 >
-                  <input type="radio" name="skin" className="sr-only" checked={on} onChange={() => setPick(o)} />
+                  <input type="radio" name="skin" className="sr-only" checked={on} onChange={() => choose(o)} />
                   <span
                     className={cn(
                       "grid size-5 shrink-0 place-items-center rounded-full ring-1",
@@ -77,9 +90,9 @@ export function RoutineFinder() {
           </fieldset>
         </div>
 
-        <div aria-live="polite" className="lg:pt-4">
+        <div ref={result} aria-live="polite" className="scroll-mt-24 lg:pt-4">
           {product && variant && pick ? (
-            <div className="overflow-hidden rounded-2xl bg-white text-ink shadow-[0_30px_60px_-30px_rgba(0,0,0,.5)]">
+            <div key={pick.id} className="animate-in fade-in slide-in-from-bottom-2 overflow-hidden rounded-2xl bg-white text-ink shadow-[0_30px_60px_-30px_rgba(0,0,0,.5)] duration-300">
               <div className="grid sm:grid-cols-[200px_1fr]">
                 <Link to={`/products/${product.handle}`} className="block bg-wine-50">
                   <img src={thumb(product.images[0])} alt={product.title} className="aspect-square size-full object-cover" loading="lazy" />
@@ -93,12 +106,9 @@ export function RoutineFinder() {
                     {variant.compareAt && <s className="ml-2 text-muted-foreground">{formatAED(variant.compareAt)}</s>}
                   </p>
                   <div className="mt-auto flex flex-wrap gap-2 pt-2">
-                    <button
-                      onClick={() => addItem(product.handle, variant.id)}
-                      className="inline-flex h-11 items-center rounded-full bg-wine px-6 text-sm font-semibold text-white hover:bg-wine-2"
-                    >
-                      Add to cart
-                    </button>
+                    <Button size="cta" className="h-11 px-6 font-semibold hover:bg-wine-2" onClick={() => addItem(product.handle, variant.id)}>
+                      Add to cart · {formatAED(variant.price)}
+                    </Button>
                     <Link
                       to={`/products/${product.handle}`}
                       className="inline-flex h-11 items-center gap-1 rounded-full px-4 text-sm font-medium text-wine hover:bg-wine-50"

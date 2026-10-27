@@ -1,4 +1,6 @@
-import { useEffect, useState, type RefObject } from "react"
+import { useEffect, useRef, useState, type RefObject } from "react"
+import { Button } from "@/components/ui/button"
+import { useCart } from "@/context/CartContext"
 import { formatAED, type Product, type Variant } from "@/data/products"
 import { cn } from "@/lib/utils"
 import { thumb } from "@/lib/asset"
@@ -9,28 +11,45 @@ export function StickyAddToCart({
   product,
   variant,
   onAdd,
+  className,
 }: {
   anchor: RefObject<HTMLElement | null>
   product: Product
   variant: Variant
   onAdd: () => void
+  className?: string
 }) {
-  const [show, setShow] = useState(false)
+  const [past, setPast] = useState(false)
+  const { isOpen } = useCart()
+  const show = past && !isOpen
 
   useEffect(() => {
     const el = anchor.current
     if (!el) return
-    const io = new IntersectionObserver(([e]) => setShow(!e.isIntersecting && e.boundingClientRect.top < 0))
+    const io = new IntersectionObserver(([e]) => setPast(!e.isIntersecting && e.boundingClientRect.top < 0))
     io.observe(el)
     return () => io.disconnect()
   }, [anchor])
 
+  // Lets other floating UI (WhatsApp) step aside while the bar is up. Skipped when the bar is CSS-hidden.
+  const barRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const root = document.documentElement
+    if (show && barRef.current && getComputedStyle(barRef.current).display !== "none") root.dataset.stickyCta = ""
+    else delete root.dataset.stickyCta
+    return () => {
+      delete root.dataset.stickyCta
+    }
+  }, [show])
+
   return (
     <div
+      ref={barRef}
       aria-hidden={!show}
       className={cn(
         "fixed inset-x-0 bottom-0 z-40 border-t bg-white/95 pb-[env(safe-area-inset-bottom,0px)] shadow-[0_-10px_30px_-15px_rgba(58,23,45,.35)] backdrop-blur transition-transform duration-300 ease-out",
         show ? "translate-y-0" : "pointer-events-none translate-y-full",
+        className,
       )}
     >
       <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3">
@@ -42,13 +61,9 @@ export function StickyAddToCart({
             {variant.title !== "Default" && ` · ${variant.title}`} · Free 2-day delivery
           </p>
         </div>
-        <button
-          tabIndex={show ? 0 : -1}
-          onClick={onAdd}
-          className="h-11 shrink-0 rounded-full bg-wine px-6 text-xs font-semibold tracking-widest text-white uppercase hover:bg-wine-2"
-        >
+        <Button variant="wine" size="cta" tabIndex={show ? 0 : -1} onClick={onAdd} className="h-11 px-6">
           Add to cart
-        </button>
+        </Button>
       </div>
     </div>
   )

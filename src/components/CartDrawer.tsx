@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
-import { Gift, Minus, Plus, ShoppingBag, Tag, Trash2, Truck, X } from "lucide-react"
+import { Banknote, CreditCard, Droplets, Gift, Minus, Plus, ShoppingBag, Tag, Trash2, Truck, X } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -11,6 +11,7 @@ import { MAX_QTY, useCart } from "@/context/CartContext"
 import { useAuth } from "@/context/AuthContext"
 import { formatAED, getProduct } from "@/data/products"
 import { thumb } from "@/lib/asset"
+import { track } from "@/lib/track"
 
 export function QuantityStepper({
   value,
@@ -132,6 +133,7 @@ function ComboNudge() {
         onClick={() => {
           removeItem(line.variantId)
           addItem(combo.handle, combo.variants[0].id, 1, { silent: true })
+          track("combo_upgrade", { from: line.handle })
           toast.success("Upgraded to the AM to PM Combo")
         }}
       >
@@ -141,8 +143,37 @@ function ComboNudge() {
   )
 }
 
+/** Shown when the combo nudge isn't: the tumbler pairs with any essence order. */
+function TumblerNudge() {
+  const { lines, addItem } = useCart()
+  const tumbler = getProduct("skinsip-quencher")
+  const hasWater = lines.some((l) => l.handle === "skinsip-quencher" || l.handle === "sip-and-glow-combo")
+  if (!tumbler || hasWater) return null
+  const v = tumbler.variants[0]
+  return (
+    <div className="mx-4 mb-4 flex items-center gap-3 rounded-xl border border-dashed border-wine/25 p-3 text-sm">
+      <Droplets className="size-5 shrink-0 text-wine" />
+      <p className="flex-1 text-ink/80">
+        Hydrate from the inside too: the <b className="text-wine">{tumbler.shortTitle}</b> for {formatAED(v.price)}.
+      </p>
+      <Button size="sm" variant="outline" className="h-9 shrink-0 rounded-full px-4" onClick={() => addItem(tumbler.handle, v.id, 1, { silent: true })}>
+        <Plus /> Add
+      </Button>
+    </div>
+  )
+}
+
+function useComboNudgeVisible() {
+  const { lines } = useCart()
+  const essences = lines.filter((l) => l.product.category === "essence" && l.variant.title === "Regular")
+  const hasCombo = lines.some((l) => l.handle === "am-to-pm-combo")
+  return !hasCombo && essences.length === 1 && essences[0].quantity === 1
+}
+
 export function CartDrawer() {
-  const { lines, isOpen, setOpen, updateQuantity, removeItem, subtotal, discountAmount, total, count } = useCart()
+  const { lines, isOpen, setOpen, updateQuantity, removeItem, subtotal, compareSubtotal, discountAmount, total, count } = useCart()
+  const comboNudge = useComboNudgeVisible()
+  const youSave = compareSubtotal - subtotal + discountAmount
   const { user } = useAuth()
   const navigate = useNavigate()
 
@@ -227,7 +258,7 @@ export function CartDrawer() {
                   </li>
                 ))}
               </ul>
-              <ComboNudge />
+              {comboNudge ? <ComboNudge /> : <TumblerNudge />}
             </ScrollArea>
             <SheetFooter className="gap-3 border-t bg-wine-50/40">
               <DiscountForm />
@@ -251,11 +282,32 @@ export function CartDrawer() {
                   <span>Total</span>
                   <span>{formatAED(total)}</span>
                 </div>
+                {youSave > 0 && (
+                  <p className="text-right text-xs font-semibold text-success">You save {formatAED(youSave)} on this order</p>
+                )}
                 <p className="text-xs text-muted-foreground">VAT & duties included.</p>
               </div>
-              <Button size="lg" className="h-12 w-full rounded-full text-sm tracking-wider uppercase" onClick={() => go("/checkout")}>
+              <Button
+                size="cta"
+                className="w-full text-sm tracking-wider uppercase"
+                onClick={() => {
+                  track("begin_checkout", { source: "cart", value: total, items: count })
+                  go("/checkout")
+                }}
+              >
                 Checkout · {formatAED(total)}
               </Button>
+              <ul aria-label="Checkout reassurance" className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-[11px] text-muted-foreground">
+                <li className="flex items-center gap-1">
+                  <Banknote className="size-3.5" /> Cash on delivery
+                </li>
+                <li className="flex items-center gap-1">
+                  <CreditCard className="size-3.5" /> Secure Stripe card
+                </li>
+                <li className="flex items-center gap-1">
+                  <Truck className="size-3.5" /> Free 2-day delivery
+                </li>
+              </ul>
               <Button variant="link" className="w-full" onClick={() => go("/shop")}>
                 Continue shopping
               </Button>

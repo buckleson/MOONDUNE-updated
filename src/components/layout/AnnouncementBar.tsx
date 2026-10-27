@@ -4,15 +4,23 @@ import { announcements } from "@/data/content"
 
 export function AnnouncementBar() {
   const [i, setI] = useState(0)
+  const [paused, setPaused] = useState(false)
   const n = announcements.length
 
   useEffect(() => {
+    if (paused || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
     const t = setInterval(() => setI((x) => (x + 1) % n), 4000)
     return () => clearInterval(t)
-  }, [i, n])
+  }, [i, n, paused])
 
   return (
-    <div className="bg-wine text-white">
+    <div
+      className="bg-wine text-white"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      onFocus={() => setPaused(true)}
+      onBlur={() => setPaused(false)}
+    >
       <div className="mx-auto flex h-9 max-w-7xl items-center justify-between gap-2 px-4">
         <button
           aria-label="Previous announcement"

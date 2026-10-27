@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Link, NavLink, useNavigate } from "react-router-dom"
 import { ChevronDown, ExternalLink, Heart, Menu, Search, ShoppingBag, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -50,6 +50,13 @@ export function Header() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  // Bump the bag icon whenever something is added.
+  const [bump, setBump] = useState(0)
+  const prevCount = useRef(count)
+  useEffect(() => {
+    if (count > prevCount.current) setBump((b) => b + 1)
+    prevCount.current = count
+  }, [count])
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8)
@@ -149,9 +156,12 @@ export function Header() {
             </Link>
           </Button>
           <Button variant="ghost" size="icon" aria-label={`Cart, ${count} items`} className="relative" onClick={() => setOpen(true)}>
-            <ShoppingBag className="size-5" />
+            <ShoppingBag key={bump} className={cn("size-5", bump > 0 && "animate-cart-bump")} />
             {count > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 grid size-4 place-items-center rounded-full bg-wine text-[10px] font-bold text-white">
+              <span
+                key={count}
+                className="animate-in zoom-in-50 fade-in absolute -top-0.5 -right-0.5 grid size-4 place-items-center rounded-full bg-wine text-[10px] font-bold text-white duration-300"
+              >
                 {count}
               </span>
             )}

@@ -18,6 +18,9 @@ const buttonVariants = cva(
         destructive:
           "bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40",
         link: "text-primary underline-offset-4 hover:underline",
+        // Storefront CTAs: rounded pills in the brand palette.
+        gold: "rounded-full bg-gold font-semibold text-wine shadow-[0_10px_30px_-10px_rgba(227,185,83,.7)] hover:bg-gold-2",
+        wine: "rounded-full bg-wine text-xs font-semibold tracking-widest text-white uppercase hover:bg-wine-2",
       },
       size: {
         default:
@@ -31,6 +34,7 @@ const buttonVariants = cva(
         "icon-sm":
           "size-7 rounded-[min(var(--radius-md),12px)] in-data-[slot=button-group]:rounded-lg",
         "icon-lg": "size-9",
+        cta: "h-12 gap-2 rounded-full px-7 duration-200 ease-(--ease-out) active:scale-[.98]",
       },
     },
     defaultVariants: {
